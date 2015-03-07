@@ -22,7 +22,7 @@ class GLViewController: UIViewController {
 	
 	private var glView:GLKView {
 		get {
-			return view as GLKView
+			return view as! GLKView
 		}
 	}
 

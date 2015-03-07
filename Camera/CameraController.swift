@@ -123,7 +123,7 @@ class CameraController: NSObject {
 		session.sessionPreset = AVCaptureSessionPresetPhoto
 		
 		if previewType == .PreviewLayer {
-			previewLayer = AVCaptureVideoPreviewLayer.layerWithSession(self.session) as AVCaptureVideoPreviewLayer
+			previewLayer = AVCaptureVideoPreviewLayer.layerWithSession(self.session) as! AVCaptureVideoPreviewLayer
 		}
 
 		let authorizationStatus = AVCaptureDevice.authorizationStatusForMediaType(AVMediaTypeVideo)
@@ -181,7 +181,7 @@ class CameraController: NSObject {
 		var indexes = [Int]()
 		if let propertyObservers = controlObservers[property] {
 			let filteredPropertyObservers = propertyObservers.filter({ (obs) -> Bool in
-				obs as NSObject != observer
+				obs as! NSObject != observer
 			})
 			controlObservers[property] = filteredPropertyObservers
 		}
@@ -260,7 +260,7 @@ class CameraController: NSObject {
 	
 	func setCustomExposureWithISO(iso:Float) {
 		performConfigurationOnCurrentCameraDevice { (currentDevice) -> Void in
-			currentDevice.setExposureModeCustomWithDuration(AVCaptureExposureDurationCurrent, ISO: iso, nil)
+			currentDevice.setExposureModeCustomWithDuration(AVCaptureExposureDurationCurrent, ISO: iso, completionHandler: nil)
 		}
 	}
 	
@@ -272,7 +272,7 @@ class CameraController: NSObject {
 			let durationRange = CMTimeRangeFromTimeToTime(activeFormat.minExposureDuration, activeFormat.maxExposureDuration)
 
 			if CMTimeRangeContainsTime(durationRange, finalDuration) != 0 {
-				currentDevice.setExposureModeCustomWithDuration(finalDuration, ISO: AVCaptureISOCurrent, nil)
+				currentDevice.setExposureModeCustomWithDuration(finalDuration, ISO: AVCaptureISOCurrent, completionHandler: nil)
 			}
 		}
 	}
@@ -522,7 +522,7 @@ extension CameraController: AVCaptureMetadataOutputObjectsDelegate, AVCaptureVid
 		
 		var faces = Array<(id:Int,frame:CGRect)>()
 		
-		for metadataObject in metadataObjects as [AVMetadataObject] {
+		for metadataObject in metadataObjects as! [AVMetadataObject] {
 			if metadataObject.type == AVMetadataObjectTypeFace {
 				if let faceObject = metadataObject as? AVMetadataFaceObject {
 					var transformedMetadataObject = previewLayer.transformedMetadataObjectForMetadataObject(metadataObject)
@@ -582,7 +582,7 @@ private extension CameraController {
 		performConfiguration { () -> Void in
 			
 			let availableCameraDevices = AVCaptureDevice.devicesWithMediaType(AVMediaTypeVideo)
-			for device in availableCameraDevices as [AVCaptureDevice] {
+			for device in availableCameraDevices as! [AVCaptureDevice] {
 				if device.position == .Back {
 					self.backCameraDevice = device
 				}
@@ -642,7 +642,7 @@ private extension CameraController {
 				self.session.addOutput(self.metadataOutput)
 			}
 			
-			if contains(self.metadataOutput.availableMetadataObjectTypes as [NSString], AVMetadataObjectTypeFace) {
+			if contains(self.metadataOutput.availableMetadataObjectTypes as! [NSString], AVMetadataObjectTypeFace) {
 				self.metadataOutput.metadataObjectTypes = [AVMetadataObjectTypeFace]
 			}
 		}

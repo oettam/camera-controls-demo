@@ -97,7 +97,7 @@ class CameraViewController : UIViewController, CameraControllerDelegate, CameraS
 			controlsView.hidden = true
 		}
 		else {
-			var segueIdentifier:NSString?
+			var segueIdentifier:String?
 			switch sender {
 			case focusButton:
 				segueIdentifier = "Embed Focus"
