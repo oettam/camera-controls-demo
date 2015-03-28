@@ -7,11 +7,12 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		95215F881AC602F700711072 /* PreviewLayerViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 95215F871AC602F700711072 /* PreviewLayerViewController.swift */; };
 		956FF3051A8559180057BFC3 /* WhiteBalanceViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 956FF3041A8559180057BFC3 /* WhiteBalanceViewController.swift */; };
 		956FF3071A8567D90057BFC3 /* FocusViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 956FF3061A8567D90057BFC3 /* FocusViewController.swift */; };
 		956FF3091A8576340057BFC3 /* CameraControlsViewControllerProtocol.swift in Sources */ = {isa = PBXBuildFile; fileRef = 956FF3081A8576340057BFC3 /* CameraControlsViewControllerProtocol.swift */; };
 		956FF30B1A86D3860057BFC3 /* OptionsViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 956FF30A1A86D3860057BFC3 /* OptionsViewController.swift */; };
-		9584016D1A79592F0019B9E8 /* GLViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9584016C1A79592F0019B9E8 /* GLViewController.swift */; };
+		9584016D1A79592F0019B9E8 /* GLPreviewViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9584016C1A79592F0019B9E8 /* GLPreviewViewController.swift */; };
 		9597744A1A5ED27500434355 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 959774491A5ED27500434355 /* AppDelegate.swift */; };
 		9597744C1A5ED27500434355 /* CameraViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9597744B1A5ED27500434355 /* CameraViewController.swift */; };
 		9597744F1A5ED27500434355 /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 9597744D1A5ED27500434355 /* Main.storyboard */; };
@@ -22,11 +23,12 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		95215F871AC602F700711072 /* PreviewLayerViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = PreviewLayerViewController.swift; sourceTree = "<group>"; };
 		956FF3041A8559180057BFC3 /* WhiteBalanceViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = WhiteBalanceViewController.swift; sourceTree = "<group>"; };
 		956FF3061A8567D90057BFC3 /* FocusViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = FocusViewController.swift; sourceTree = "<group>"; };
 		956FF3081A8576340057BFC3 /* CameraControlsViewControllerProtocol.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = CameraControlsViewControllerProtocol.swift; sourceTree = "<group>"; };
 		956FF30A1A86D3860057BFC3 /* OptionsViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = OptionsViewController.swift; sourceTree = "<group>"; };
-		9584016C1A79592F0019B9E8 /* GLViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = GLViewController.swift; sourceTree = "<group>"; };
+		9584016C1A79592F0019B9E8 /* GLPreviewViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = GLPreviewViewController.swift; sourceTree = "<group>"; };
 		959774441A5ED27500434355 /* Camera.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Camera.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		959774481A5ED27500434355 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		959774491A5ED27500434355 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
@@ -70,14 +72,9 @@
 			children = (
 				959774491A5ED27500434355 /* AppDelegate.swift */,
 				95DCE3021A6EB005000F8294 /* CameraController.swift */,
-				956FF3081A8576340057BFC3 /* CameraControlsViewControllerProtocol.swift */,
 				9597744B1A5ED27500434355 /* CameraViewController.swift */,
-				956FF3061A8567D90057BFC3 /* FocusViewController.swift */,
-				95F9E1A91A841C5C00FD4793 /* ExposureViewController.swift */,
-				956FF30A1A86D3860057BFC3 /* OptionsViewController.swift */,
-				956FF3041A8559180057BFC3 /* WhiteBalanceViewController.swift */,
-				9584016C1A79592F0019B9E8 /* GLViewController.swift */,
-				95F9E1A71A84095F00FD4793 /* ControlsSegue.swift */,
+				95E8724D1AC6F8FC00885FA2 /* Controls */,
+				95E8724C1AC6F8EB00885FA2 /* Preview */,
 				9597744D1A5ED27500434355 /* Main.storyboard */,
 				959774521A5ED27500434355 /* LaunchScreen.xib */,
 				959774471A5ED27500434355 /* Supporting Files */,
@@ -91,6 +88,28 @@
 				959774481A5ED27500434355 /* Info.plist */,
 			);
 			name = "Supporting Files";
+			sourceTree = "<group>";
+		};
+		95E8724C1AC6F8EB00885FA2 /* Preview */ = {
+			isa = PBXGroup;
+			children = (
+				95215F871AC602F700711072 /* PreviewLayerViewController.swift */,
+				9584016C1A79592F0019B9E8 /* GLPreviewViewController.swift */,
+			);
+			name = Preview;
+			sourceTree = "<group>";
+		};
+		95E8724D1AC6F8FC00885FA2 /* Controls */ = {
+			isa = PBXGroup;
+			children = (
+				956FF3081A8576340057BFC3 /* CameraControlsViewControllerProtocol.swift */,
+				956FF3061A8567D90057BFC3 /* FocusViewController.swift */,
+				95F9E1A91A841C5C00FD4793 /* ExposureViewController.swift */,
+				956FF30A1A86D3860057BFC3 /* OptionsViewController.swift */,
+				956FF3041A8559180057BFC3 /* WhiteBalanceViewController.swift */,
+				95F9E1A71A84095F00FD4793 /* ControlsSegue.swift */,
+			);
+			name = Controls;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -166,9 +185,10 @@
 				9597744C1A5ED27500434355 /* CameraViewController.swift in Sources */,
 				956FF3051A8559180057BFC3 /* WhiteBalanceViewController.swift in Sources */,
 				95DCE3031A6EB005000F8294 /* CameraController.swift in Sources */,
-				9584016D1A79592F0019B9E8 /* GLViewController.swift in Sources */,
+				9584016D1A79592F0019B9E8 /* GLPreviewViewController.swift in Sources */,
 				95F9E1AA1A841C5C00FD4793 /* ExposureViewController.swift in Sources */,
 				9597744A1A5ED27500434355 /* AppDelegate.swift in Sources */,
+				95215F881AC602F700711072 /* PreviewLayerViewController.swift in Sources */,
 				956FF3091A8576340057BFC3 /* CameraControlsViewControllerProtocol.swift in Sources */,
 				956FF3071A8567D90057BFC3 /* FocusViewController.swift in Sources */,
 				95F9E1A81A84095F00FD4793 /* ControlsSegue.swift in Sources */,

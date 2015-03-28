@@ -8,6 +8,10 @@
 
 import UIKit
 
+protocol CameraPreviewViewController {
+	var cameraController:CameraController? { get set }
+}
+
 class CameraViewController : UIViewController, CameraControllerDelegate, CameraSettingValueObserver {
 
 	var cameraController:CameraController!
@@ -28,16 +32,14 @@ class CameraViewController : UIViewController, CameraControllerDelegate, CameraS
 	@IBOutlet var currentValuesLabel:UILabel!
 	
 	private var currentControlsViewController:UIViewController?
+	private var previewViewController:CameraPreviewViewController?
 	private var faceViews = [UIView]()
 
 	
 	override func viewDidLoad() {
 		super.viewDidLoad()
 		cameraController = CameraController(delegate: self)
-		let previewLayer = cameraController.previewLayer
-		previewLayer.frame = videoPreviewView.bounds
-		videoPreviewView.layer.addSublayer(previewLayer)
-		
+
 		cameraController.registerObserver(self, property: CameraControlObservableSettingAdjustingFocus)
 		cameraController.registerObserver(self, property: CameraControlObservableSettingAdjustingWhiteBalance)
 		cameraController.registerObserver(self, property: CameraControlObservableSettingAdjustingExposure)
@@ -46,17 +48,11 @@ class CameraViewController : UIViewController, CameraControllerDelegate, CameraS
 		cameraController.registerObserver(self, property: CameraControlObservableSettingExposureDuration)
 		cameraController.registerObserver(self, property: CameraControlObservableSettingExposureTargetOffset)
 		cameraController.registerObserver(self, property: CameraControlObservableSettingWBGains)
-	}
-
-	
-	override func viewDidLayoutSubviews() {
-		super.viewDidLayoutSubviews()
 		
-		let previewLayer = cameraController.previewLayer
-		previewLayer.frame = videoPreviewView.bounds
+		previewViewController?.cameraController = cameraController;
 	}
 
-	
+
 	override func viewWillAppear(animated: Bool) {
 		super.viewWillAppear(animated)
 
@@ -71,7 +67,10 @@ class CameraViewController : UIViewController, CameraControllerDelegate, CameraS
 	
 	override func prepareForSegue(segue: UIStoryboardSegue, sender: AnyObject?) {
 		
-		if let controlsSegue = segue as? ControlsSegue {
+		if segue.identifier == "Embed Preview" {
+			previewViewController = segue.destinationViewController as? CameraPreviewViewController
+		}
+		else if let controlsSegue = segue as? ControlsSegue {
 			
 			controlsSegue.currentViewController = currentControlsViewController
 			controlsSegue.hostView = controlsView
