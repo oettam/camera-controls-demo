@@ -20,16 +20,13 @@ class GLPreviewViewController: UIViewController, CameraPreviewViewController, Ca
 		}
 	}
 	
-	private var glContext:EAGLContext?
-	private var ciContext:CIContext?
-	private var renderBuffer:GLuint = GLuint()
+	fileprivate var glContext:EAGLContext?
+	fileprivate var ciContext:CIContext?
+	fileprivate var renderBuffer:GLuint = GLuint()
 	
-	private var filter = CIFilter(name:"CIPhotoEffectMono")
-	
-	private var glView:GLKView {
-		get {
+	fileprivate var filter = CIFilter(name:"CIPhotoEffectMono")!
+	fileprivate var glView:GLKView {
 			return view as! GLKView
-		}
 	}
 
 	override func loadView() {
@@ -39,15 +36,17 @@ class GLPreviewViewController: UIViewController, CameraPreviewViewController, Ca
 	override func viewDidLoad() {
         super.viewDidLoad()
 	
-		glContext = EAGLContext(API: .OpenGLES2)
+		glContext = EAGLContext(api: .openGLES2)
 		
-		glView.context = glContext
-		glView.transform = CGAffineTransformMakeRotation(CGFloat(M_PI_2))
+		
+		glView.context = glContext!
+//		glView.drawableDepthFormat = .Format24
+		glView.transform = CGAffineTransform(rotationAngle: CGFloat(M_PI_2))
 		if let window = glView.window {
 			glView.frame = window.bounds
 		}
 		
-		ciContext = CIContext(EAGLContext: glContext)
+		ciContext = CIContext(eaglContext: glContext!)
 	}
 
 
@@ -55,17 +54,18 @@ class GLPreviewViewController: UIViewController, CameraPreviewViewController, Ca
 
 	func cameraController(cameraController: CameraController, didOutputImage image: CIImage) {
 
-		if glContext != EAGLContext.currentContext() {
-			EAGLContext.setCurrentContext(glContext)
+		if glContext != EAGLContext.current() {
+			EAGLContext.setCurrent(glContext)
 		}
 		
 		glView.bindDrawable()
 		
 		filter.setValue(image, forKey: "inputImage")
-		let outputImage = filter.outputImage
-
-		ciContext?.drawImage(outputImage, inRect:image.extent(), fromRect: image.extent())
+		let outputImage = filter.outputImage!
+        
+        ciContext?.draw(outputImage, in: image.extent, from: image.extent)
 
 		glView.display()
 	}
+
 }

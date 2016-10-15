@@ -31,9 +31,9 @@ class WhiteBalanceViewController: UIViewController, CameraSettingValueObserver, 
 	override func viewDidLoad() {
 		
 		if let autoWB = cameraController?.isContinuousAutoWhiteBalanceEnabled() {
-			modeSwitch.on = autoWB
-			temperatureSlider.enabled = !autoWB
-			tintSlider.enabled = !autoWB
+			modeSwitch.isOn = autoWB
+			temperatureSlider.isEnabled = !autoWB
+			tintSlider.isEnabled = !autoWB
 		}
 		
 		if let currentTemperature = cameraController?.currentTemperature() {
@@ -46,11 +46,11 @@ class WhiteBalanceViewController: UIViewController, CameraSettingValueObserver, 
 	}
 	
 	
-	@IBAction func modeSwitchValueChanged(sender:UISwitch) {
-		temperatureSlider.enabled = !sender.on
-		tintSlider.enabled = !sender.on
+	@IBAction func modeSwitchValueChanged(_ sender:UISwitch) {
+		temperatureSlider.isEnabled = !sender.isOn
+		tintSlider.isEnabled = !sender.isOn
 		
-		if modeSwitch.on {
+		if modeSwitch.isOn {
 			cameraController?.enableContinuousAutoWhiteBalance()
 		}
 		else {
@@ -60,17 +60,17 @@ class WhiteBalanceViewController: UIViewController, CameraSettingValueObserver, 
 	}
 	
 	
-	@IBAction func temperatureSliderValueChanged(sender:UISlider) {
+	@IBAction func temperatureSliderValueChanged(_ sender:UISlider) {
 		cameraController?.setCustomWhiteBalanceWithTemperature(sender.value)
 	}
 	
 	
-	@IBAction func tintSliderValueChanged(sender:UISlider) {
+	@IBAction func tintSliderValueChanged(_ sender:UISlider) {
 		cameraController?.setCustomWhiteBalanceWithTint(sender.value)
 	}
 	
 	
-	func cameraSetting(setting: String, valueChanged value: AnyObject) {
+	func cameraSetting(_ setting: String, valueChanged value: AnyObject) {
 		if setting == CameraControlObservableSettingWBGains {
 			if let wbValues = value as? WhiteBalanceValues {
 				temperatureSlider.value = wbValues.temperature
