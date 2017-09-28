@@ -19,16 +19,16 @@ class ExposureViewController: UIViewController, CameraControlsViewControllerProt
 	var cameraController:CameraController? {
 		willSet {
 			if let cameraController = cameraController {
-				cameraController.unregisterObserver(self, property: CameraControlObservableSettingExposureTargetOffset)
-				cameraController.unregisterObserver(self, property: CameraControlObservableSettingExposureDuration)
-				cameraController.unregisterObserver(self, property: CameraControlObservableSettingISO)
+				cameraController.unregisterObserver(observer: self, property: CameraControlObservableSettingExposureTargetOffset)
+				cameraController.unregisterObserver(observer: self, property: CameraControlObservableSettingExposureDuration)
+				cameraController.unregisterObserver(observer: self, property: CameraControlObservableSettingISO)
 			}
 		}
 		didSet {
 			if let cameraController = cameraController {
-				cameraController.registerObserver(self, property: CameraControlObservableSettingExposureTargetOffset)
-				cameraController.registerObserver(self, property: CameraControlObservableSettingExposureDuration)
-				cameraController.registerObserver(self, property: CameraControlObservableSettingISO)
+				cameraController.registerObserver(observer: self, property: CameraControlObservableSettingExposureTargetOffset)
+				cameraController.registerObserver(observer: self, property: CameraControlObservableSettingExposureDuration)
+				cameraController.registerObserver(observer: self, property: CameraControlObservableSettingISO)
 			}
 		}
 	}
@@ -39,11 +39,11 @@ class ExposureViewController: UIViewController, CameraControlsViewControllerProt
 	
 
 	@IBAction func modeSwitchValueChanged(sender:UISwitch) {
-		if sender.on {
+		if sender.isOn {
 			cameraController?.enableContinuousAutoExposure()
 		}
 		else {
-			cameraController?.setCustomExposureWithDuration(durationSlider.value)
+            cameraController?.setCustomExposureWithDuration(duration: durationSlider.value)
 		}
 	
 		updateSliders()
@@ -53,11 +53,11 @@ class ExposureViewController: UIViewController, CameraControlsViewControllerProt
 	@IBAction func sliderValueChanged(sender:UISlider) {
 		switch sender {
 		case biasSlider:
-			cameraController?.setExposureTargetBias(sender.value)
+            cameraController?.setExposureTargetBias(bias: sender.value)
 		case durationSlider:
-			cameraController?.setCustomExposureWithDuration(sender.value)
+            cameraController?.setCustomExposureWithDuration(duration: sender.value)
 		case isoSlider:
-			cameraController?.setCustomExposureWithISO(sender.value)
+            cameraController?.setCustomExposureWithISO(iso: sender.value)
 		default: break
 		}
 	}
@@ -66,7 +66,7 @@ class ExposureViewController: UIViewController, CameraControlsViewControllerProt
 	func cameraSetting(setting: String, valueChanged value: AnyObject) {
 		if setting == CameraControlObservableSettingExposureDuration {
 			if let durationValue = value as? NSValue {
-				let duration = CMTimeGetSeconds(durationValue.CMTimeValue)
+                let duration = CMTimeGetSeconds(durationValue.timeValue)
 				durationSlider.value = Float(duration)
 			}
 		}
@@ -79,9 +79,9 @@ class ExposureViewController: UIViewController, CameraControlsViewControllerProt
 	
 	
 	func setInitialValues() {
-		if isViewLoaded() && cameraController != nil {
+        if isViewLoaded && cameraController != nil {
 			if let autoExposure = cameraController?.isContinuousAutoExposureEnabled() {
-				modeSwitch.on = autoExposure
+                modeSwitch.isOn = autoExposure
 				updateSliders()
 			}
 			
@@ -102,7 +102,7 @@ class ExposureViewController: UIViewController, CameraControlsViewControllerProt
 	
 	func updateSliders() {
 		for slider in [durationSlider, isoSlider] as [UISlider] {
-			slider.enabled = !modeSwitch.on
+            slider.isEnabled = !modeSwitch.isOn
 		}
 	}
 }
