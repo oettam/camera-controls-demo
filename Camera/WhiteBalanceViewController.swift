@@ -18,12 +18,12 @@ class WhiteBalanceViewController: UIViewController, CameraSettingValueObserver, 
 	var cameraController:CameraController? {
 		willSet {
 			if let cameraController = cameraController {
-				cameraController.unregisterObserver(self, property: CameraControlObservableSettingWBGains)
+				cameraController.unregisterObserver(observer: self, property: CameraControlObservableSettingWBGains)
 			}
 		}
 		didSet {
 			if let cameraController = cameraController {
-				cameraController.registerObserver(self, property: CameraControlObservableSettingWBGains)
+                cameraController.registerObserver(observer: self, property: CameraControlObservableSettingWBGains)
 			}
 		}
 	}
@@ -31,9 +31,9 @@ class WhiteBalanceViewController: UIViewController, CameraSettingValueObserver, 
 	override func viewDidLoad() {
 		
 		if let autoWB = cameraController?.isContinuousAutoWhiteBalanceEnabled() {
-			modeSwitch.on = autoWB
-			temperatureSlider.enabled = !autoWB
-			tintSlider.enabled = !autoWB
+            modeSwitch.isOn = autoWB
+            temperatureSlider.isEnabled = !autoWB
+            tintSlider.isEnabled = !autoWB
 		}
 		
 		if let currentTemperature = cameraController?.currentTemperature() {
@@ -47,26 +47,26 @@ class WhiteBalanceViewController: UIViewController, CameraSettingValueObserver, 
 	
 	
 	@IBAction func modeSwitchValueChanged(sender:UISwitch) {
-		temperatureSlider.enabled = !sender.on
-		tintSlider.enabled = !sender.on
+        temperatureSlider.isEnabled = !sender.isOn
+		tintSlider.isEnabled = !sender.isOn
 		
-		if modeSwitch.on {
+        if modeSwitch.isOn {
 			cameraController?.enableContinuousAutoWhiteBalance()
 		}
 		else {
-			cameraController?.setCustomWhiteBalanceWithTint(tintSlider.value)
-			cameraController?.setCustomWhiteBalanceWithTemperature(temperatureSlider.value)
+            cameraController?.setCustomWhiteBalanceWithTint(tint: tintSlider.value)
+            cameraController?.setCustomWhiteBalanceWithTemperature(temperature: temperatureSlider.value)
 		}
 	}
 	
 	
 	@IBAction func temperatureSliderValueChanged(sender:UISlider) {
-		cameraController?.setCustomWhiteBalanceWithTemperature(sender.value)
+        cameraController?.setCustomWhiteBalanceWithTemperature(temperature: sender.value)
 	}
 	
 	
 	@IBAction func tintSliderValueChanged(sender:UISlider) {
-		cameraController?.setCustomWhiteBalanceWithTint(sender.value)
+        cameraController?.setCustomWhiteBalanceWithTint(tint: sender.value)
 	}
 	
 	

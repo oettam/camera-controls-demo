@@ -41,7 +41,7 @@ enum CameraControllePreviewType {
 }
 
 
-extension AVCaptureWhiteBalanceGains {
+extension AVCaptureDevice.WhiteBalanceGains {
 	mutating func clampGainsToRange(minVal:Float, maxVal:Float) {
 		blueGain = max(min(blueGain, maxVal), minVal)
 		redGain = max(min(redGain, maxVal), minVal)
@@ -59,7 +59,7 @@ class WhiteBalanceValues {
 		self.tint = tint
 	}
 	
-	convenience init(temperatureAndTintValues:AVCaptureWhiteBalanceTemperatureAndTintValues) {
+    convenience init(temperatureAndTintValues:AVCaptureDevice.WhiteBalanceTemperatureAndTintValues) {
 		self.init(temperature: temperatureAndTintValues.temperature, tint:temperatureAndTintValues.tint)
 	}
 }
@@ -89,7 +89,7 @@ class CameraController: NSObject {
 	
 	// MARK: Private properties
 	
-	private var sessionQueue:dispatch_queue_t = dispatch_queue_create("com.example.session_access_queue", DISPATCH_QUEUE_SERIAL)
+    private var sessionQueue = DispatchQueue(label: "com.example.session_access_queue")
 	
 	private var session:AVCaptureSession!
 	private var backCameraDevice:AVCaptureDevice?
@@ -129,13 +129,13 @@ class CameraController: NSObject {
 	func initializeSession() {
 		
 		session = AVCaptureSession()
-		session.sessionPreset = AVCaptureSessionPresetPhoto
+        session.sessionPreset = AVCaptureSession.Preset.photo
 		
-		let authorizationStatus = AVCaptureDevice.authorizationStatusForMediaType(AVMediaTypeVideo)
+        let authorizationStatus = AVCaptureDevice.authorizationStatus(for: AVMediaType.video)
 		
 		switch authorizationStatus {
-		case .NotDetermined:
-			AVCaptureDevice.requestAccessForMediaType(AVMediaTypeVideo,
+        case .notDetermined:
+            AVCaptureDevice.requestAccess(for: AVMediaType.video,
 				completionHandler: { (granted:Bool) -> Void in
 					if granted {
 						self.configureSession()
@@ -144,23 +144,26 @@ class CameraController: NSObject {
 						self.showAccessDeniedMessage()
 					}
 			})
-		case .Authorized:
+		case .authorized:
 			configureSession()
-		case .Denied, .Restricted:
+		case .denied, .restricted:
 			showAccessDeniedMessage()
-		}
+        }
 	}
 	
 	
 	// MARK: - Camera Control
-	
-	func startRunning() {
-		performConfiguration { () -> Void in
-			self.observeValues()
-			self.session.startRunning()
-			NSNotificationCenter.defaultCenter().postNotificationName(CameraControllerDidStartSession, object: self)
-		}
-	}
+    
+    func startRunning() {
+        performConfiguration { () -> Void in
+            self.observeValues()
+            self.session.startRunning()
+            NotificationCenter
+                .default
+                .post(name: NSNotification.Name(rawValue: CameraControllerDidStartSession),
+                      object: self)
+        }
+    }
 
 	
 	func stopRunning() {
@@ -171,7 +174,7 @@ class CameraController: NSObject {
 	}
 	
 	
-	func registerObserver<T where T:NSObject, T:CameraSettingValueObserver>(observer:T, property:String) {
+    func registerObserver<T>(observer:T, property:String) where T:NSObject, T:CameraSettingValueObserver {
 		var propertyObservers = controlObservers[property]
 		if propertyObservers == nil {
 			propertyObservers = [AnyObject]()
@@ -182,8 +185,7 @@ class CameraController: NSObject {
 	}
 	
 	
-	func unregisterObserver<T where T:NSObject, T:CameraSettingValueObserver>(observer:T, property:String) {
-		var indexes = [Int]()
+    func unregisterObserver<T>(observer:T, property:String) where T:NSObject, T:CameraSettingValueObserver {
 		if let propertyObservers = controlObservers[property] {
 			let filteredPropertyObservers = propertyObservers.filter({ (obs) -> Bool in
 				obs as! NSObject != observer
@@ -197,22 +199,22 @@ class CameraController: NSObject {
 
 	func enableContinuousAutoFocus() {
 		performConfigurationOnCurrentCameraDevice { (currentDevice) -> Void in
-			if currentDevice.isFocusModeSupported(.ContinuousAutoFocus) {
-				currentDevice.focusMode = .ContinuousAutoFocus
+            if currentDevice.isFocusModeSupported(.continuousAutoFocus) {
+                currentDevice.focusMode = .continuousAutoFocus
 			}
 		}
 	}
 
 	
 	func isContinuousAutoFocusEnabled() -> Bool {
-		return currentCameraDevice!.focusMode == .ContinuousAutoFocus
+        return currentCameraDevice!.focusMode == .continuousAutoFocus
 	}
 
 	
 	func lockFocusAtPointOfInterest(pointInView:CGPoint) {
 		var pointInCamera:CGPoint
 		if let previewLayer = previewLayer {
-			pointInCamera = previewLayer.captureDevicePointOfInterestForPoint(pointInView)
+            pointInCamera = previewLayer.captureDevicePointConverted(fromLayerPoint: pointInView)
 		}
 		else {
 			// TODO: calculate the point without the preview layer
@@ -220,9 +222,9 @@ class CameraController: NSObject {
 		}
 
 		performConfigurationOnCurrentCameraDevice { (currentDevice) -> Void in
-			if currentDevice.focusPointOfInterestSupported {
+            if currentDevice.isFocusPointOfInterestSupported {
 				currentDevice.focusPointOfInterest = pointInCamera
-				currentDevice.focusMode = .AutoFocus
+                currentDevice.focusMode = .autoFocus
 			}
 		}
 	}
@@ -230,7 +232,7 @@ class CameraController: NSObject {
 	
 	func lockFocusAtLensPosition(lensPosition:CGFloat) {
 		performConfigurationOnCurrentCameraDevice { (currentDevice) -> Void in
-			currentDevice.setFocusModeLockedWithLensPosition(Float(lensPosition)) {
+            currentDevice.setFocusModeLocked(lensPosition: Float(lensPosition)) {
 				(time:CMTime) -> Void in
 				
 			}
@@ -248,15 +250,15 @@ class CameraController: NSObject {
 
 	func enableContinuousAutoExposure() {
 		performConfigurationOnCurrentCameraDevice { (currentDevice) -> Void in
-			if currentDevice.isExposureModeSupported(.ContinuousAutoExposure) {
-				currentDevice.exposureMode = .ContinuousAutoExposure
+            if currentDevice.isExposureModeSupported(.continuousAutoExposure) {
+                currentDevice.exposureMode = .continuousAutoExposure
 			}
 		}
 	}
 	
 	
 	func isContinuousAutoExposureEnabled() -> Bool {
-		return currentCameraDevice!.exposureMode == .ContinuousAutoExposure
+        return currentCameraDevice!.exposureMode == .continuousAutoExposure
 	}
 	
 	
@@ -264,16 +266,16 @@ class CameraController: NSObject {
 		var pointInCamera:CGPoint
 		
 		if let previewLayer = previewLayer {
-			pointInCamera = previewLayer.captureDevicePointOfInterestForPoint(pointInView)
+            pointInCamera = previewLayer.captureDevicePointConverted(fromLayerPoint: pointInView)
 		}
 		else {
 			// TODO: calculate point without preview layer
 			pointInCamera = pointInView
 		}
 		performConfigurationOnCurrentCameraDevice { (currentDevice) -> Void in
-			if currentDevice.exposurePointOfInterestSupported {
+            if currentDevice.isExposurePointOfInterestSupported {
 				currentDevice.exposurePointOfInterest = pointInCamera
-				currentDevice.exposureMode = .AutoExpose
+                currentDevice.exposureMode = .autoExpose
 			}
 		}
 	}
@@ -281,7 +283,7 @@ class CameraController: NSObject {
 	
 	func setCustomExposureWithISO(iso:Float) {
 		performConfigurationOnCurrentCameraDevice { (currentDevice) -> Void in
-			currentDevice.setExposureModeCustomWithDuration(AVCaptureExposureDurationCurrent, ISO: iso, completionHandler: nil)
+            currentDevice.setExposureModeCustom(duration: AVCaptureDevice.currentExposureDuration, iso: iso, completionHandler: nil)
 		}
 	}
 	
@@ -292,8 +294,8 @@ class CameraController: NSObject {
 			let finalDuration = CMTimeMakeWithSeconds(Float64(duration), 1_000_000)
 			let durationRange = CMTimeRangeFromTimeToTime(activeFormat.minExposureDuration, activeFormat.maxExposureDuration)
 
-			if CMTimeRangeContainsTime(durationRange, finalDuration) != 0 {
-				currentDevice.setExposureModeCustomWithDuration(finalDuration, ISO: AVCaptureISOCurrent, completionHandler: nil)
+			if CMTimeRangeContainsTime(durationRange, finalDuration) {
+                currentDevice.setExposureModeCustom(duration: finalDuration, iso: AVCaptureDevice.currentISO, completionHandler: nil)
 			}
 		}
 	}
@@ -317,7 +319,7 @@ class CameraController: NSObject {
 	
 	
 	func currentISO() -> Float? {
-		return currentCameraDevice?.ISO
+        return currentCameraDevice?.iso
 	}
 
 	
@@ -330,31 +332,31 @@ class CameraController: NSObject {
 	
 	func enableContinuousAutoWhiteBalance() {
 		performConfigurationOnCurrentCameraDevice { (currentDevice) -> Void in
-			if currentDevice.isWhiteBalanceModeSupported(.ContinuousAutoWhiteBalance) {
-				currentDevice.whiteBalanceMode = .ContinuousAutoWhiteBalance
+            if currentDevice.isWhiteBalanceModeSupported(.continuousAutoWhiteBalance) {
+                currentDevice.whiteBalanceMode = .continuousAutoWhiteBalance
 			}
 		}
 	}
 	
 	
 	func isContinuousAutoWhiteBalanceEnabled() -> Bool {
-		return currentCameraDevice!.whiteBalanceMode == .ContinuousAutoWhiteBalance
+        return currentCameraDevice!.whiteBalanceMode == .continuousAutoWhiteBalance
 	}
 
 	
 	func setCustomWhiteBalanceWithTemperature(temperature:Float) {
 		
 		performConfigurationOnCurrentCameraDevice { (currentDevice) -> Void in
-			if currentDevice.isWhiteBalanceModeSupported(.Locked) {
+            if currentDevice.isWhiteBalanceModeSupported(.locked) {
 				let currentGains = currentDevice.deviceWhiteBalanceGains
-				let currentTint = currentDevice.temperatureAndTintValuesForDeviceWhiteBalanceGains(currentGains).tint
-				let temperatureAndTintValues = AVCaptureWhiteBalanceTemperatureAndTintValues(temperature: temperature, tint: currentTint)
+                let currentTint = currentDevice.temperatureAndTintValues(for: currentGains).tint
+                let temperatureAndTintValues = AVCaptureDevice.WhiteBalanceTemperatureAndTintValues(temperature: temperature, tint: currentTint)
 				
-				var deviceGains = currentDevice.deviceWhiteBalanceGainsForTemperatureAndTintValues(temperatureAndTintValues)
-				var maxWhiteBalanceGain = currentDevice.maxWhiteBalanceGain
-				deviceGains.clampGainsToRange(1, maxVal: maxWhiteBalanceGain)
+                var deviceGains = currentDevice.deviceWhiteBalanceGains(for: temperatureAndTintValues)
+                let maxWhiteBalanceGain = currentDevice.maxWhiteBalanceGain
+                deviceGains.clampGainsToRange(minVal: 1, maxVal: maxWhiteBalanceGain)
 				
-				currentDevice.setWhiteBalanceModeLockedWithDeviceWhiteBalanceGains(deviceGains) {
+                currentDevice.setWhiteBalanceModeLocked(with: deviceGains) {
 					(timestamp:CMTime) -> Void in
 				}
 			}
@@ -365,17 +367,17 @@ class CameraController: NSObject {
 	func setCustomWhiteBalanceWithTint(tint:Float) {
 		
 		performConfigurationOnCurrentCameraDevice { (currentDevice) -> Void in
-			if currentDevice.isWhiteBalanceModeSupported(.Locked) {
-				var maxWhiteBalanceGain = currentDevice.maxWhiteBalanceGain
+            if currentDevice.isWhiteBalanceModeSupported(.locked) {
+                let maxWhiteBalanceGain = currentDevice.maxWhiteBalanceGain
 				var currentGains = currentDevice.deviceWhiteBalanceGains
-				currentGains.clampGainsToRange(1, maxVal: maxWhiteBalanceGain)
-				let currentTemperature = currentDevice.temperatureAndTintValuesForDeviceWhiteBalanceGains(currentGains).temperature
-				let temperatureAndTintValues = AVCaptureWhiteBalanceTemperatureAndTintValues(temperature: currentTemperature, tint: tint)
+                currentGains.clampGainsToRange(minVal: 1, maxVal: maxWhiteBalanceGain)
+                let currentTemperature = currentDevice.temperatureAndTintValues(for: currentGains).temperature
+                let temperatureAndTintValues = AVCaptureDevice.WhiteBalanceTemperatureAndTintValues(temperature: currentTemperature, tint: tint)
 				
-				var deviceGains = currentDevice.deviceWhiteBalanceGainsForTemperatureAndTintValues(temperatureAndTintValues)
-				deviceGains.clampGainsToRange(1, maxVal: maxWhiteBalanceGain)
+                var deviceGains = currentDevice.deviceWhiteBalanceGains(for: temperatureAndTintValues)
+                deviceGains.clampGainsToRange(minVal: 1, maxVal: maxWhiteBalanceGain)
 
-				currentDevice.setWhiteBalanceModeLockedWithDeviceWhiteBalanceGains(deviceGains) {
+                currentDevice.setWhiteBalanceModeLocked(with: deviceGains) {
 					(timestamp:CMTime) -> Void in
 				}
 			}
@@ -385,7 +387,7 @@ class CameraController: NSObject {
 	
 	func currentTemperature() -> Float? {
 		if let gains = currentCameraDevice?.deviceWhiteBalanceGains {
-			var tempAndTint = currentCameraDevice?.temperatureAndTintValuesForDeviceWhiteBalanceGains(gains)
+            let tempAndTint = currentCameraDevice?.temperatureAndTintValues(for: gains)
 			return tempAndTint?.temperature
 		}
 		return nil
@@ -394,7 +396,7 @@ class CameraController: NSObject {
 	
 	func currentTint() -> Float? {
 		if let gains = currentCameraDevice?.deviceWhiteBalanceGains {
-			var tempAndTint = currentCameraDevice?.temperatureAndTintValuesForDeviceWhiteBalanceGains(gains)
+            let tempAndTint = currentCameraDevice?.temperatureAndTintValues(for: gains)
 			return tempAndTint?.tint
 		}
 		return nil
@@ -402,7 +404,7 @@ class CameraController: NSObject {
 
 	// MARK: Still image capture
 	
-	func captureStillImage(completionHandler handler:((image:UIImage, metadata:NSDictionary) -> Void)) {
+    func captureStillImage(completionHandler handler:@escaping ((_ image:UIImage, _ metadata:NSDictionary) -> Void)) {
 		if enableBracketedCapture {
 			bracketedCaptureStillImage(completionHandler:handler);
 		}
@@ -416,65 +418,65 @@ class CameraController: NSObject {
 	
 	:param: handler executed on the main queue
 	*/
-	func captureSingleStillImage(completionHandler handler: ((image:UIImage, metadata:NSDictionary) -> Void)) {
-		dispatch_async(sessionQueue) { () -> Void in
+    func captureSingleStillImage(completionHandler handler: @escaping ((_ image:UIImage, _ metadata:NSDictionary) -> Void)) {
+        sessionQueue.async() { () -> Void in
 
-			let connection = self.stillCameraOutput.connectionWithMediaType(AVMediaTypeVideo)
+            let connection = self.stillCameraOutput.connection(with: AVMediaType.video)
 			
-			connection.videoOrientation = AVCaptureVideoOrientation(rawValue: UIDevice.currentDevice().orientation.rawValue)!
+            connection?.videoOrientation = AVCaptureVideoOrientation(rawValue: UIDevice.current.orientation.rawValue)!
 			
-			self.stillCameraOutput.captureStillImageAsynchronouslyFromConnection(connection) {
+            self.stillCameraOutput.captureStillImageAsynchronously(from: connection!) {
 				(imageDataSampleBuffer, error) -> Void in
 				
 				if error == nil {
-					let imageData = AVCaptureStillImageOutput.jpegStillImageNSDataRepresentation(imageDataSampleBuffer)
+                    let imageData = AVCaptureStillImageOutput.jpegStillImageNSDataRepresentation(imageDataSampleBuffer!)
 
-					let metadata:NSDictionary = CMCopyDictionaryOfAttachments(nil, imageDataSampleBuffer, CMAttachmentMode(kCMAttachmentMode_ShouldPropagate)).takeUnretainedValue()
+                    let metadata = CMCopyDictionaryOfAttachments(nil, imageDataSampleBuffer!, CMAttachmentMode(kCMAttachmentMode_ShouldPropagate))
 
-					if let image = UIImage(data: imageData) {
-						dispatch_async(dispatch_get_main_queue()) { () -> Void in
-							handler(image: image, metadata:metadata)
+                    if let metadata = metadata, let image = UIImage(data: imageData!) {
+                        DispatchQueue.main.async() { () -> Void in
+                            handler(image, metadata)
 						}
 					}
 				}
 				else {
-					NSLog("error while capturing still image: \(error)")
+                    NSLog("error while capturing still image: \(String(describing: error))")
 				}
 			}
 		}
 	}
 	
 	
-	func bracketedCaptureStillImage(completionHandler handler: ((image:UIImage, metadata:NSDictionary) -> Void)) {
-		dispatch_async(sessionQueue) { () -> Void in
+    func bracketedCaptureStillImage(completionHandler handler: @escaping ((_ image:UIImage, _ metadata:NSDictionary) -> Void)) {
+        sessionQueue.async() { () -> Void in
 			
-			let connection = self.stillCameraOutput.connectionWithMediaType(AVMediaTypeVideo)
-			connection.videoOrientation = AVCaptureVideoOrientation(rawValue: UIDevice.currentDevice().orientation.rawValue)!
+            let connection = self.stillCameraOutput.connection(with: AVMediaType.video)
+            connection?.videoOrientation = AVCaptureVideoOrientation(rawValue: UIDevice.current.orientation.rawValue)!
 
-			var settings = [-1.0, 0.0, 1.0].map {
+			let settings = [-1.0, 0.0, 1.0].map {
 				(bias:Float) -> AVCaptureAutoExposureBracketedStillImageSettings in
 				
-				AVCaptureAutoExposureBracketedStillImageSettings.autoExposureSettingsWithExposureTargetBias(bias)
+                AVCaptureAutoExposureBracketedStillImageSettings.autoExposureSettings(exposureTargetBias: bias)
 			}
 			
-			self.stillCameraOutput.captureStillImageBracketAsynchronouslyFromConnection(connection, withSettingsArray: settings, completionHandler: {
+            self.stillCameraOutput.captureStillImageBracketAsynchronously(from: connection!, withSettingsArray: settings, completionHandler: {
 				(sampleBuffer, captureSettings, error) -> Void in
 
 				// TODO: stitch images
 				
 				if error == nil {
-					let imageData = AVCaptureStillImageOutput.jpegStillImageNSDataRepresentation(sampleBuffer)
+                    let imageData = AVCaptureStillImageOutput.jpegStillImageNSDataRepresentation(sampleBuffer!)
 					
-					let metadata:NSDictionary = CMCopyDictionaryOfAttachments(nil, sampleBuffer, CMAttachmentMode(kCMAttachmentMode_ShouldPropagate)).takeUnretainedValue()
+                    let metadata = CMCopyDictionaryOfAttachments(nil, sampleBuffer!, CMAttachmentMode(kCMAttachmentMode_ShouldPropagate))
 					
-					if let image = UIImage(data: imageData) {
-						dispatch_async(dispatch_get_main_queue()) { () -> Void in
-							handler(image: image, metadata:metadata)
+                    if let metadata = metadata, let image = UIImage(data: imageData!) {
+                        DispatchQueue.main.async() { () -> Void in
+                            handler(image, metadata)
 						}
 					}
 				}
 				else {
-					NSLog("error while capturing still image: \(error)")
+                    NSLog("error while capturing still image: \(String(describing: error))")
 				}
 			})
 		}
@@ -487,12 +489,12 @@ class CameraController: NSObject {
 	}
 	
 	
-	override func observeValueForKeyPath(keyPath: String, ofObject object: AnyObject, change: [NSObject : AnyObject], context: UnsafeMutablePointer<Void>) {
+    override func observeValue(forKeyPath keyPath: String?, of object: Any?, change: [NSKeyValueChangeKey : Any]?, context: UnsafeMutableRawPointer?) {
 		var key = ""
-		var newValue: AnyObject = change[NSKeyValueChangeNewKey]!
+        var newValue: AnyObject = change![NSKeyValueChangeKey.newKey]! as AnyObject
 		
-		switch context {
-		case &lensPositionContext:
+		switch context! {
+        case &lensPositionContext:
 			key = CameraControlObservableSettingLensPosition
 			
 		case &exposureDuration:
@@ -505,9 +507,10 @@ class CameraController: NSObject {
 			key = CameraControlObservableSettingWBGains
 			
 			if let newNSValue = newValue as? NSValue {
-				var gains:AVCaptureWhiteBalanceGains? = nil
+                var gains:AVCaptureDevice.WhiteBalanceGains? = nil
 				newNSValue.getValue(&gains)
-				if let newGains = gains, let newTemperatureAndTint = currentCameraDevice?.temperatureAndTintValuesForDeviceWhiteBalanceGains(newGains) {
+                if let newGains = gains,
+                    let newTemperatureAndTint = currentCameraDevice?.temperatureAndTintValues(for: newGains) {
 					newValue = WhiteBalanceValues(temperatureAndTintValues: newTemperatureAndTint)
 				}
 			}
@@ -521,7 +524,7 @@ class CameraController: NSObject {
 			key = "unknown context"
 		}
 		
-		notifyObservers(key, value: newValue)
+        notifyObservers(key: key, value: newValue)
 	}
 }
 
@@ -534,9 +537,9 @@ extension CameraController: AVCaptureMetadataOutputObjectsDelegate, AVCaptureVid
 		
 		if let framesDelegate = framesDelegate {
 			let pixelBuffer = CMSampleBufferGetImageBuffer(sampleBuffer)
-			let image = CIImage(CVPixelBuffer: pixelBuffer)
+            let image = CIImage(cvPixelBuffer: pixelBuffer!)
 			
-			framesDelegate.cameraController(self, didOutputImage: image)
+            framesDelegate.cameraController(cameraController: self, didOutputImage: image)
 		}
 	}
 	
@@ -546,12 +549,12 @@ extension CameraController: AVCaptureMetadataOutputObjectsDelegate, AVCaptureVid
 		var faces = Array<(id:Int,frame:CGRect)>()
 		
 		for metadataObject in metadataObjects as! [AVMetadataObject] {
-			if metadataObject.type == AVMetadataObjectTypeFace {
+            if metadataObject.type == AVMetadataObject.ObjectType.face {
 				if let faceObject = metadataObject as? AVMetadataFaceObject {
 					// TODO: transform object without preview layer?
 					if let previewLayer = previewLayer {
-						var transformedMetadataObject = previewLayer.transformedMetadataObjectForMetadataObject(metadataObject)
-						let face:(id: Int, frame: CGRect) = (faceObject.faceID, transformedMetadataObject.bounds)
+                        let transformedMetadataObject = previewLayer.transformedMetadataObject(for: metadataObject)
+                        let face:(id: Int, frame: CGRect) = (faceObject.faceID, transformedMetadataObject!.bounds)
 						faces.append(face)
 					}
 				}
@@ -559,8 +562,8 @@ extension CameraController: AVCaptureMetadataOutputObjectsDelegate, AVCaptureVid
 		}
 		
 		if let delegate = self.delegate {
-			dispatch_async(dispatch_get_main_queue()) {
-				delegate.cameraController(self, didDetectFaces: faces)
+            DispatchQueue.main.async() {
+                delegate.cameraController(cameraController: self, didDetectFaces: faces)
 			}
 		}
 	}
@@ -572,21 +575,22 @@ extension CameraController: AVCaptureMetadataOutputObjectsDelegate, AVCaptureVid
 
 private extension CameraController {
 	
-	func performConfiguration(block: (() -> Void)) {
-		dispatch_async(sessionQueue) { () -> Void in
+    func performConfiguration(block: @escaping (() -> Void)) {
+        sessionQueue.async() { () -> Void in
 			block()
 		}
 	}
 
 	
-	func performConfigurationOnCurrentCameraDevice(block: ((currentDevice:AVCaptureDevice) -> Void)) {
+    func performConfigurationOnCurrentCameraDevice(block: @escaping ((_ currentDevice:AVCaptureDevice) -> Void)) {
 		if let currentDevice = self.currentCameraDevice {
 			performConfiguration { () -> Void in
-				var error:NSError?
-				if currentDevice.lockForConfiguration(&error) {
-					block(currentDevice: currentDevice)
-					currentDevice.unlockForConfiguration()
-				}
+                do {
+                    try currentDevice.lockForConfiguration()
+                    block(currentDevice)
+                    currentDevice.unlockForConfiguration()
+                }
+                catch {}
 			}
 		}
 	}
@@ -604,12 +608,12 @@ private extension CameraController {
 		
 		performConfiguration { () -> Void in
 			
-			let availableCameraDevices = AVCaptureDevice.devicesWithMediaType(AVMediaTypeVideo)
-			for device in availableCameraDevices as! [AVCaptureDevice] {
-				if device.position == .Back {
+            let availableCameraDevices = AVCaptureDevice.devices(for: AVMediaType.video)
+            for device in availableCameraDevices {
+                if device.position == .back {
 					self.backCameraDevice = device
 				}
-				else if device.position == .Front {
+                else if device.position == .front {
 					self.frontCameraDevice = device
 				}
 			}
@@ -618,9 +622,8 @@ private extension CameraController {
 			// let's set the back camera as the initial device
 			
 			self.currentCameraDevice = self.backCameraDevice
-			var error:NSError?
 			
-			let possibleCameraInput: AnyObject? = AVCaptureDeviceInput.deviceInputWithDevice(self.currentCameraDevice, error: &error)
+            let possibleCameraInput: AnyObject? = try? AVCaptureDeviceInput(device: self.currentCameraDevice!)
 			if let backCameraInput = possibleCameraInput as? AVCaptureDeviceInput {
 				if self.session.canAddInput(backCameraInput) {
 					self.session.addInput(backCameraInput)
@@ -648,7 +651,7 @@ private extension CameraController {
 	func configureVideoOutput() {
 		performConfiguration { () -> Void in
 			self.videoOutput = AVCaptureVideoDataOutput()
-			self.videoOutput.setSampleBufferDelegate(self, queue: dispatch_queue_create("sample buffer delegate", DISPATCH_QUEUE_SERIAL))
+            self.videoOutput.setSampleBufferDelegate(self, queue: DispatchQueue(label: "sample buffer delegate"))
 			if self.session.canAddOutput(self.videoOutput) {
 				self.session.addOutput(self.videoOutput)
 			}
@@ -665,21 +668,21 @@ private extension CameraController {
 				self.session.addOutput(self.metadataOutput)
 			}
 			
-			if contains(self.metadataOutput.availableMetadataObjectTypes as! [NSString], AVMetadataObjectTypeFace) {
-				self.metadataOutput.metadataObjectTypes = [AVMetadataObjectTypeFace]
+            if self.metadataOutput.availableMetadataObjectTypes.contains(AVMetadataObject.ObjectType.face) {
+                self.metadataOutput.metadataObjectTypes = [AVMetadataObject.ObjectType.face]
 			}
 		}
 	}
 	
 	
 	func observeValues() {
-		currentCameraDevice?.addObserver(self, forKeyPath: "lensPosition", options: .New, context: &lensPositionContext)
-		currentCameraDevice?.addObserver(self, forKeyPath: "adjustingFocus", options: .New, context: &adjustingFocusContext)
-		currentCameraDevice?.addObserver(self, forKeyPath: "adjustingExposure", options: .New, context: &adjustingExposureContext)
-		currentCameraDevice?.addObserver(self, forKeyPath: "adjustingWhiteBalance", options: .New, context: &adjustingWhiteBalanceContext)
-		currentCameraDevice?.addObserver(self, forKeyPath: "exposureDuration", options: .New, context: &exposureDuration)
-		currentCameraDevice?.addObserver(self, forKeyPath: "ISO", options: .New, context: &ISO)
-		currentCameraDevice?.addObserver(self, forKeyPath: "deviceWhiteBalanceGains", options: .New, context: &deviceWhiteBalanceGainsContext)
+        currentCameraDevice?.addObserver(self, forKeyPath: "lensPosition", options: .new, context: &lensPositionContext)
+        currentCameraDevice?.addObserver(self, forKeyPath: "adjustingFocus", options: .new, context: &adjustingFocusContext)
+        currentCameraDevice?.addObserver(self, forKeyPath: "adjustingExposure", options: .new, context: &adjustingExposureContext)
+		currentCameraDevice?.addObserver(self, forKeyPath: "adjustingWhiteBalance", options: .new, context: &adjustingWhiteBalanceContext)
+		currentCameraDevice?.addObserver(self, forKeyPath: "exposureDuration", options: .new, context: &exposureDuration)
+		currentCameraDevice?.addObserver(self, forKeyPath: "ISO", options: .new, context: &ISO)
+		currentCameraDevice?.addObserver(self, forKeyPath: "deviceWhiteBalanceGains", options: .new, context: &deviceWhiteBalanceGainsContext)
 	}
 	
 	
@@ -703,15 +706,15 @@ private extension CameraController {
 		if let lensPositionObservers = controlObservers[key] {
 			for obj in lensPositionObservers as [AnyObject] {
 				if let observer = obj as? CameraSettingValueObserver {
-					notifyObserver(observer, setting: key, value: value)
+                    notifyObserver(observer: observer, setting: key, value: value)
 				}
 			}
 		}
 	}
 	
 	
-	func notifyObserver<T where T:CameraSettingValueObserver>(observer:T, setting:String, value:AnyObject) {
-		observer.cameraSetting(setting, valueChanged: value)
+    func notifyObserver<T>(observer:T, setting:String, value:AnyObject) where T:CameraSettingValueObserver {
+        observer.cameraSetting(setting: setting, valueChanged: value)
 	}
 }
 

@@ -39,15 +39,15 @@ class GLPreviewViewController: UIViewController, CameraPreviewViewController, Ca
 	override func viewDidLoad() {
         super.viewDidLoad()
 	
-		glContext = EAGLContext(API: .OpenGLES2)
+        glContext = EAGLContext(api: .openGLES2)
 		
-		glView.context = glContext
-		glView.transform = CGAffineTransformMakeRotation(CGFloat(M_PI_2))
+        glView.context = glContext!
+        glView.transform = CGAffineTransform(rotationAngle: CGFloat.pi / 2)
 		if let window = glView.window {
 			glView.frame = window.bounds
 		}
 		
-		ciContext = CIContext(EAGLContext: glContext)
+		ciContext = CIContext(eaglContext: glContext!)
 	}
 
 
@@ -55,16 +55,16 @@ class GLPreviewViewController: UIViewController, CameraPreviewViewController, Ca
 
 	func cameraController(cameraController: CameraController, didOutputImage image: CIImage) {
 
-		if glContext != EAGLContext.currentContext() {
-			EAGLContext.setCurrentContext(glContext)
+		if glContext != EAGLContext.current() {
+			EAGLContext.setCurrent(glContext)
 		}
 		
 		glView.bindDrawable()
 		
-		filter.setValue(image, forKey: "inputImage")
-		let outputImage = filter.outputImage
+        filter?.setValue(image, forKey: "inputImage")
+        let outputImage = filter?.outputImage
 
-		ciContext?.drawImage(outputImage, inRect:image.extent(), fromRect: image.extent())
+        ciContext?.draw(outputImage!, in:image.extent, from: image.extent)
 
 		glView.display()
 	}

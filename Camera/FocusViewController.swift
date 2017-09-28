@@ -17,12 +17,12 @@ class FocusViewController: UIViewController, CameraControlsViewControllerProtoco
 	var cameraController:CameraController? {
 		willSet {
 			if let cameraController = cameraController {
-				cameraController.unregisterObserver(self, property: CameraControlObservableSettingLensPosition)
+				cameraController.unregisterObserver(observer: self, property: CameraControlObservableSettingLensPosition)
 			}
 		}
 		didSet {
 			if let cameraController = cameraController {
-				cameraController.registerObserver(self, property: CameraControlObservableSettingLensPosition)
+				cameraController.registerObserver(observer: self, property: CameraControlObservableSettingLensPosition)
 			}
 		}
 	}
@@ -33,18 +33,18 @@ class FocusViewController: UIViewController, CameraControlsViewControllerProtoco
 	
 	
 	@IBAction func sliderDidChangeValue(sender:UISlider) {
-		cameraController?.lockFocusAtLensPosition(CGFloat(sender.value))
+        cameraController?.lockFocusAtLensPosition(lensPosition: CGFloat(sender.value))
 	}
 	
 	
 	@IBAction func modeSwitchValueChanged(sender:UISwitch) {
-		if sender.on {
+        if sender.isOn {
 			cameraController?.enableContinuousAutoFocus()
 		}
 		else {
-			cameraController?.lockFocusAtLensPosition(CGFloat(self.slider.value))
+            cameraController?.lockFocusAtLensPosition(lensPosition: CGFloat(self.slider.value))
 		}
-		slider.enabled = !sender.on
+        slider.isEnabled = !sender.isOn
 	}
 
 	
@@ -58,10 +58,10 @@ class FocusViewController: UIViewController, CameraControlsViewControllerProtoco
 
 	
 	func setInitialValues() {
-		if isViewLoaded() && cameraController != nil {
+		if isViewLoaded && cameraController != nil {
 			if let autoFocus = cameraController?.isContinuousAutoFocusEnabled() {
-				modeSwitch.on = autoFocus
-				slider.enabled = !autoFocus
+				modeSwitch.isOn = autoFocus
+				slider.isEnabled = !autoFocus
 			}
 			
 			if let currentLensPosition = cameraController?.currentLensPosition() {
